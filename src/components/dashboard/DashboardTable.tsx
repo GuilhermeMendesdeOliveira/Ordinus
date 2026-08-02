@@ -68,13 +68,13 @@ export function DashboardTable({
                     <TableCell className="px-6 py-5 text-sm font-medium text-foreground">
                       {row.client}
                     </TableCell>
-                    <TableCell className="px-6 py-5 text-sm text-muted-foreground">
+                    <TableCell className="px-6 py-5 text-sm whitespace-nowrap text-muted-foreground">
                       {row.matter}
                     </TableCell>
                     <TableCell className="px-6 py-5">
-                      <StatusBadge tone={row.status.tone} label={row.status.label} />
+                      <StatusBadge tone={row.status.tone} label={row.status.label} className="whitespace-nowrap" />
                     </TableCell>
-                    <TableCell className="px-6 py-5 text-sm text-muted-foreground">
+                    <TableCell className="px-6 py-5 text-sm whitespace-nowrap text-muted-foreground">
                       {row.date}
                     </TableCell>
                     <TableCell className="px-6 py-5 text-sm text-muted-foreground">
