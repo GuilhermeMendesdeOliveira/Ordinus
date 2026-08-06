@@ -19,6 +19,18 @@ export type ClientRow = {
   status: { label: string; tone: StatusTone };
   date: string;
   owner: string;
+  email?: string;
+  phone?: string;
+  cpfCnpj?: string;
+  rg?: string;
+  birthDate?: string;
+  cep?: string;
+  address?: string;
+  number?: string;
+  neighborhood?: string;
+  complement?: string;
+  city?: string;
+  uf?: string;
 };
 
 const columns = ["Cliente", "Processo", "Status", "Data", "Responsável", "Ações"];

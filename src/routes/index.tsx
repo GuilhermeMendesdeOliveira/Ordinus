@@ -18,18 +18,21 @@ import { MetricCard, MetricCardSkeleton, type Metric } from "@/components/dashbo
 import { DashboardTable, type ClientRow } from "@/components/dashboard/DashboardTable";
 import { ChartCard, type ChartPoint } from "@/components/dashboard/ChartCard";
 import { ActivityCard, type Activity } from "@/components/dashboard/ActivityCard";
+import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
+import { useSidebar } from "@/lib/sidebar-context";
+import { getStoredClients } from "@/lib/clients-store";
 
 export const Route = createFileRoute("/")({
   component: DashboardPage,
   head: () => ({
     meta: [
-      { title: "Painel de Controle | Mendes & Aragão Advocacia" },
+      { title: "Painel de Controle | Jeniffer Lemes Advocacia" },
       {
         name: "description",
         content:
-          "Painel de controle do escritório Mendes & Aragão: clientes, processos, audiências e atividades em uma visão única.",
+          "Painel de controle do escritório Jeniffer Lemes: clientes, processos, audiências e atividades em uma visão única.",
       },
-      { property: "og:title", content: "Painel de Controle | Mendes & Aragão Advocacia" },
+      { property: "og:title", content: "Painel de Controle | Jeniffer Lemes Advocacia" },
       {
         property: "og:description",
         content: "Visão geral das informações do escritório: clientes, processos e agenda.",
@@ -123,51 +126,68 @@ const activities: Activity[] = [
 
 function DashboardPage() {
   const [isLoading, setIsLoading] = useState(true);
+  const [clients, setClients] = useState<ClientRow[]>([]);
+  const { isCollapsed } = useSidebar();
 
   useEffect(() => {
+    setClients(getStoredClients());
     const timer = setTimeout(() => setIsLoading(false), 700);
     return () => clearTimeout(timer);
   }, []);
 
+  const dynamicMetrics: Metric[] = [
+    { label: "Total de Clientes", value: clients.length.toString(), icon: User, hint: "+12 neste mes" },
+    { label: "Casos Ativos", value: clients.filter(c => c.status.label === "Em andamento").length.toString(), icon: Briefcase, hint: "Em andamento" },
+    { label: "Audiencias Agendadas", value: "18", icon: CalendarDays, hint: "3 nos proximos 7 dias" },
+    { label: "Novas Demandas", value: "23", icon: FilePlus, hint: "5 aguardando triagem" },
+  ];
+
   return (
-    <div className="flex min-h-screen w-full bg-background">
-      <Sidebar activeLabel="Dashboard" />
+    <ProtectedRoute>
+      <div className="flex h-screen w-full bg-background overflow-hidden">
+        <Sidebar activeLabel="Dashboard" />
 
-      <div className="flex min-w-0 flex-1 flex-col">
-        <Header title="Painel de Controle" subtitle="Mendes & Aragão — Advocacia Empresarial" />
+        <div
+          className="flex flex-col flex-1 min-w-0"
+          style={{
+            marginLeft: isCollapsed ? "76px" : "260px",
+            transition: "margin-left 500ms cubic-bezier(0.4, 0, 0.2, 1)",
+          }}
+        >
+          <Header title="Painel de Controle" subtitle="Jeniffer Lemes - Advocacia Empresarial" />
 
-        <main className="flex-1">
-          <Container className="flex flex-col gap-6">
-            <div>
-              <h1 className="text-3xl tracking-tight text-foreground">Painel de Controle</h1>
-              <p className="mt-2 text-sm text-muted-foreground">
-                Visão geral das informações do escritório
-              </p>
-            </div>
+          <main className="flex-1 overflow-y-auto">
+            <Container className="flex flex-col gap-6 py-6">
+              <div>
+                <h1 className="text-3xl tracking-tight text-foreground">Painel de Controle</h1>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  Visao geral das informacoes do escritorio
+                </p>
+              </div>
 
-            <section
-              aria-label="Indicadores"
-              className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-4"
-            >
-              {isLoading
-                ? metrics.map((metric) => <MetricCardSkeleton key={metric.label} />)
-                : metrics.map((metric, index) => (
-                    <MetricCard key={metric.label} metric={metric} index={index} />
-                  ))}
-            </section>
+              <section
+                aria-label="Indicadores"
+                className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-4"
+              >
+                {isLoading
+                  ? dynamicMetrics.map((metric) => <MetricCardSkeleton key={metric.label} />)
+                  : dynamicMetrics.map((metric, index) => (
+                      <MetricCard key={metric.label} metric={metric} index={index} />
+                    ))}
+              </section>
 
-            <DashboardTable rows={rows} isLoading={isLoading} />
+              <DashboardTable rows={clients.slice(0, 4)} isLoading={isLoading} />
 
-            <section className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,7fr)_minmax(0,5fr)]">
-              <ChartCard data={chartData} isLoading={isLoading} />
-              <ActivityCard activities={activities} isLoading={isLoading} />
-            </section>
-          </Container>
-          <div className="h-6" aria-hidden />
-        </main>
+              <section className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,7fr)_minmax(0,5fr)]">
+                <ChartCard data={chartData} isLoading={isLoading} />
+                <ActivityCard activities={activities} isLoading={isLoading} />
+              </section>
+            </Container>
+          </main>
+        </div>
+
+        <Toaster />
       </div>
-
-      <Toaster />
-    </div>
+    </ProtectedRoute>
   );
 }

@@ -10,33 +10,79 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as LoginRouteImport } from './routes/login'
+import { Route as ClientesIndexRouteImport } from './routes/clientes/index'
+import { Route as ProcessosIndexRouteImport } from './routes/processos/index'
+import { Route as ProcessosIdRouteImport } from './routes/processos/$id'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ClientesIndexRoute = ClientesIndexRouteImport.update({
+  id: '/clientes/',
+  path: '/clientes/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProcessosIndexRoute = ProcessosIndexRouteImport.update({
+  id: '/processos/',
+  path: '/processos/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProcessosIdRoute = ProcessosIdRouteImport.update({
+  id: '/processos/$id',
+  path: '/processos/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/login': typeof LoginRoute
+  '/processos/$id': typeof ProcessosIdRoute
+  '/clientes/': typeof ClientesIndexRoute
+  '/processos/': typeof ProcessosIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/login': typeof LoginRoute
+  '/processos/$id': typeof ProcessosIdRoute
+  '/clientes': typeof ClientesIndexRoute
+  '/processos': typeof ProcessosIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/login': typeof LoginRoute
+  '/processos/$id': typeof ProcessosIdRoute
+  '/clientes/': typeof ClientesIndexRoute
+  '/processos/': typeof ProcessosIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths: '/' | '/login' | '/processos/$id' | '/clientes/' | '/processos/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to: '/' | '/login' | '/processos/$id' | '/clientes' | '/processos'
+  id:
+    | '__root__'
+    | '/'
+    | '/login'
+    | '/processos/$id'
+    | '/clientes/'
+    | '/processos/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  LoginRoute: typeof LoginRoute
+  ProcessosIdRoute: typeof ProcessosIdRoute
+  ClientesIndexRoute: typeof ClientesIndexRoute
+  ProcessosIndexRoute: typeof ProcessosIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -48,11 +94,43 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/clientes/': {
+      id: '/clientes/'
+      path: '/clientes'
+      fullPath: '/clientes/'
+      preLoaderRoute: typeof ClientesIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/processos/': {
+      id: '/processos/'
+      path: '/processos'
+      fullPath: '/processos/'
+      preLoaderRoute: typeof ProcessosIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/processos/$id': {
+      id: '/processos/$id'
+      path: '/processos/$id'
+      fullPath: '/processos/$id'
+      preLoaderRoute: typeof ProcessosIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  LoginRoute: LoginRoute,
+  ProcessosIdRoute: ProcessosIdRoute,
+  ClientesIndexRoute: ClientesIndexRoute,
+  ProcessosIndexRoute: ProcessosIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
