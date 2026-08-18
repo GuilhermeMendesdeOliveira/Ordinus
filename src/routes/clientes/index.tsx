@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { Search, Eye, Pencil, Trash2, ShieldAlert } from "lucide-react";
+import { Search, Eye, Pencil, Trash2, ShieldAlert, FileText } from "lucide-react";
 import { toast } from "sonner";
 
 import { Container } from "@/components/system/Container";
@@ -32,8 +32,8 @@ import { RegisterProcessDialog } from "@/components/dashboard/RegisterProcessDia
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { useSidebar } from "@/lib/sidebar-context";
 import { cn } from "@/lib/utils";
-import { getStoredClients, setStoredClients } from "@/lib/clients-store";
-import { getStoredProcesses, setStoredProcesses, generateProcessNumber, type ProcessArea } from "@/lib/processes-store";
+import { fetchClients, createClient, updateClient, deleteClient } from "@/lib/clients-store";
+import { createProcess, generateProcessNumber, type ProcessArea } from "@/lib/processes-store";
 import type { ClientRow } from "@/components/dashboard/DashboardTable";
 
 export const Route = createFileRoute("/clientes/")({
@@ -66,40 +66,20 @@ function ClientesPage() {
   const [generatedProcessNumber, setGeneratedProcessNumber] = useState("");
 
   useEffect(() => {
-    // Simulando um carregamento suave
-    const data = getStoredClients();
-    setClients(data);
-    const timer = setTimeout(() => setIsLoading(false), 500);
-    return () => clearTimeout(timer);
+    fetchClients().then((data) => {
+      setClients(data);
+      setIsLoading(false);
+    });
   }, []);
 
-  const handleAddClient = (newClientData: Omit<ClientRow, "id" | "date">) => {
-    const today = new Date();
-    const months = [
-      "jan",
-      "fev",
-      "mar",
-      "abr",
-      "mai",
-      "jun",
-      "jul",
-      "ago",
-      "set",
-      "out",
-      "nov",
-      "dez",
-    ];
-    const formattedDate = `${today.getDate().toString().padStart(2, "0")} ${months[today.getMonth()]} ${today.getFullYear()}`;
+  const handleAddClient = async (newClientData: Omit<ClientRow, "id" | "date">) => {
+    const newClient = await createClient(newClientData);
+    if (!newClient) {
+      toast.error("Erro ao cadastrar cliente.");
+      return;
+    }
 
-    const newClient: ClientRow = {
-      ...newClientData,
-      id: Date.now().toString(),
-      date: formattedDate,
-    };
-
-    const updated = [newClient, ...clients];
-    setClients(updated);
-    setStoredClients(updated);
+    setClients((prev) => [newClient, ...prev]);
     toast.success(`Cliente "${newClient.client}" cadastrado com sucesso!`);
 
     setNewClientForProcess(newClient);
@@ -112,56 +92,64 @@ function ClientesPage() {
     setIsDeleteOpen(true);
   };
 
-  const confirmDeleteClient = () => {
+  const confirmDeleteClient = async () => {
     if (!clientToDelete) return;
-    const updated = clients.filter((c) => c.id !== clientToDelete.id);
-    setClients(updated);
-    setStoredClients(updated);
-    toast.success(`Cliente "${clientToDelete.client}" removido com sucesso.`);
+    const success = await deleteClient(clientToDelete.id);
+    if (success) {
+      setClients((prev) => prev.filter((c) => c.id !== clientToDelete.id));
+      toast.success(`Cliente "${clientToDelete.client}" removido com sucesso.`);
+    } else {
+      toast.error("Erro ao remover cliente.");
+    }
     setClientToDelete(null);
+  };
+
+  const handleClientStatusChange = async (clientId: string, status: { label: string; tone: StatusTone }) => {
+    const updated = await updateClient(clientId, { status });
+    if (updated) {
+      setClients((prev) => prev.map((c) => (c.id === clientId ? updated : c)));
+      if (selectedClient?.id === clientId) {
+        setSelectedClient(updated);
+      }
+      toast.success(`Status alterado para "${status.label}"`);
+    } else {
+      toast.error("Erro ao atualizar status do cliente.");
+    }
   };
 
   const handleProcessPromptConfirm = () => {
     setIsProcessRegisterOpen(true);
   };
 
-  const handleProcessRegisterConfirm = (data: { processNumber: string; area: ProcessArea }) => {
+  const handleProcessRegisterConfirm = async (data: { processNumber: string; area: ProcessArea }) => {
     if (!newClientForProcess) return;
 
-    const today = new Date();
-    const months = [
-      "jan", "fev", "mar", "abr", "mai", "jun",
-      "jul", "ago", "set", "out", "nov", "dez",
-    ];
-    const formattedDate = `${today.getDate().toString().padStart(2, "0")} ${months[today.getMonth()]} ${today.getFullYear()}`;
-
-    const processId = Date.now().toString();
-    const newProcess = {
-      id: processId,
+    const newProcess = await createProcess({
       processNumber: data.processNumber,
       clientId: newClientForProcess.id,
       clientName: newClientForProcess.client,
       area: data.area,
-      status: { label: "Em andamento", tone: "success" as const },
-      date: formattedDate,
-    };
+      status: { label: "Em andamento", tone: "success" },
+    });
 
-    const existingProcesses = getStoredProcesses();
-    const updatedProcesses = [newProcess, ...existingProcesses];
-    setStoredProcesses(updatedProcesses);
+    if (!newProcess) {
+      toast.error("Erro ao criar processo.");
+      return;
+    }
 
-    const updatedClients = clients.map((c) =>
-      c.id === newClientForProcess.id
-        ? { ...c, matter: data.processNumber }
-        : c
+    // Update client matter in the local state
+    setClients((prev) =>
+      prev.map((c) =>
+        c.id === newClientForProcess.id
+          ? { ...c, matter: data.processNumber }
+          : c
+      )
     );
-    setClients(updatedClients);
-    setStoredClients(updatedClients);
 
     toast.success(`Processo "${data.processNumber}" criado com sucesso!`);
     setNewClientForProcess(null);
 
-    navigate({ to: "/processos/$id", params: { id: processId } });
+    navigate({ to: "/processos/$id", params: { id: newProcess.id } });
   };
 
   // Filtragem dos clientes
@@ -292,6 +280,17 @@ function ClientesPage() {
                               </button>
                               <button
                                 type="button"
+                                aria-label="Gerar Contrato"
+                                onClick={() => {
+                                  navigate({ to: "/contratos/novo", search: { clientId: client.id } });
+                                }}
+                                className="grid h-8 w-8 place-items-center rounded-md border border-border text-muted-foreground transition-colors hover:border-gold/50 hover:text-primary"
+                                title="Gerar Contrato"
+                              >
+                                <FileText className="h-4 w-4" />
+                              </button>
+                              <button
+                                type="button"
                                 aria-label="Excluir"
                                 onClick={() => handleDeleteClient(client)}
                                 className="grid h-8 w-8 place-items-center rounded-md border border-border text-muted-foreground transition-colors hover:border-destructive/50 hover:text-destructive"
@@ -326,6 +325,7 @@ function ClientesPage() {
       client={selectedClient}
       isOpen={isViewOpen}
       onOpenChange={setIsViewOpen}
+      onStatusChange={handleClientStatusChange}
     />
 
     <ConfirmDeleteDialog

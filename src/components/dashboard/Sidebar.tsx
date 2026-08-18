@@ -25,6 +25,7 @@ const navItems: NavItem[] = [
   { label: "Dashboard", icon: LayoutDashboard, to: "/" },
   { label: "Clientes", icon: Users, to: "/clientes" },
   { label: "Processos", icon: Briefcase, to: "/processos" },
+  { label: "Contratos", icon: FileText, to: "/contratos" },
   // { label: "Financeiro", icon: Wallet, to: "/financeiro" },
   // { label: "Agenda", icon: CalendarDays, to: "/agenda" },
   // { label: "Documentos", icon: FileText, to: "/documentos" },

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Calendar,
   CheckCircle2,
@@ -12,8 +12,10 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import type { Deadline } from "@/lib/deadlines-store";
 import {
-  getStoredDeadlines,
-  setStoredDeadlines,
+  fetchDeadlines,
+  saveDeadline,
+  updateDeadline,
+  deleteDeadline,
   getDeadlineTypeLabel,
   getDeadlineTypeColor,
   getDaysUntilDue,
@@ -31,38 +33,46 @@ export function DeadlineList({
   processNumber,
   clientName,
 }: DeadlineListProps) {
-  const [deadlines, setDeadlines] = useState<Deadline[]>(
-    getStoredDeadlines().filter((d) => d.processId === processId)
-  );
+  const [deadlines, setDeadlines] = useState<Deadline[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
-  const handleAddDeadline = (deadline: Deadline) => {
-    const allDeadlines = getStoredDeadlines();
-    const updated = [...allDeadlines, deadline];
-    setStoredDeadlines(updated);
-    setDeadlines(updated.filter((d) => d.processId === processId));
-  };
-
-  const handleToggleStatus = (deadlineId: string) => {
-    const allDeadlines = getStoredDeadlines();
-    const updated = allDeadlines.map((d) => {
-      if (d.id === deadlineId) {
-        const newStatus = d.status === "pendente" ? "concluido" : "pendente";
-        return { ...d, status: newStatus as Deadline["status"] };
-      }
-      return d;
+  useEffect(() => {
+    fetchDeadlines().then((allDeadlines) => {
+      setDeadlines(allDeadlines.filter((d) => d.processId === processId));
     });
-    setStoredDeadlines(updated);
-    setDeadlines(updated.filter((d) => d.processId === processId));
-    toast.success("Status do prazo atualizado!");
+  }, [processId]);
+
+  const handleAddDeadline = async (deadline: Deadline) => {
+    const saved = await saveDeadline(deadline);
+    if (saved) {
+      setDeadlines((prev) => [...prev, saved]);
+      toast.success(`Prazo "${deadline.title}" adicionado com sucesso!`);
+    } else {
+      toast.error("Erro ao adicionar prazo.");
+    }
   };
 
-  const handleDeleteDeadline = (deadlineId: string) => {
-    const allDeadlines = getStoredDeadlines();
-    const updated = allDeadlines.filter((d) => d.id !== deadlineId);
-    setStoredDeadlines(updated);
-    setDeadlines(updated.filter((d) => d.processId === processId));
-    toast.success("Prazo removido com sucesso.");
+  const handleToggleStatus = async (deadlineId: string) => {
+    const deadline = deadlines.find((d) => d.id === deadlineId);
+    if (!deadline) return;
+    const newStatus: Deadline["status"] = deadline.status === "pendente" ? "concluido" : "pendente";
+    const updated = await updateDeadline(deadlineId, { status: newStatus });
+    if (updated) {
+      setDeadlines((prev) => prev.map((d) => (d.id === deadlineId ? updated : d)));
+      toast.success("Status do prazo atualizado!");
+    } else {
+      toast.error("Erro ao atualizar status do prazo.");
+    }
+  };
+
+  const handleDeleteDeadline = async (deadlineId: string) => {
+    const success = await deleteDeadline(deadlineId);
+    if (success) {
+      setDeadlines((prev) => prev.filter((d) => d.id !== deadlineId));
+      toast.success("Prazo removido com sucesso.");
+    } else {
+      toast.error("Erro ao remover prazo.");
+    }
   };
 
   const formatDate = (dateStr: string) => {

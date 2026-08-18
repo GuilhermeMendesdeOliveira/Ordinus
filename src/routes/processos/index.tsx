@@ -1,12 +1,14 @@
 import { useEffect, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Search, Eye, ShieldAlert } from "lucide-react";
+import { toast } from "sonner";
 
 import { Container } from "@/components/system/Container";
 import { Sidebar } from "@/components/dashboard/Sidebar";
 import { Header } from "@/components/dashboard/Header";
 import { Panel } from "@/components/system/Panel";
-import { StatusBadge } from "@/components/system/StatusBadge";
+import { StatusSelector, PROCESS_STATUS_OPTIONS } from "@/components/system/StatusSelector";
+import type { StatusTone } from "@/components/system/StatusBadge";
 import {
   Table,
   TableBody,
@@ -18,7 +20,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { useSidebar } from "@/lib/sidebar-context";
 import { cn } from "@/lib/utils";
-import { getStoredProcesses, type ProcessRow } from "@/lib/processes-store";
+import { fetchProcesses, updateProcess, type ProcessRow } from "@/lib/processes-store";
 
 export const Route = createFileRoute("/processos/")({
   component: ProcessosPage,
@@ -39,11 +41,21 @@ function ProcessosPage() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const data = getStoredProcesses();
-    setProcesses(data);
-    const timer = setTimeout(() => setIsLoading(false), 500);
-    return () => clearTimeout(timer);
+    fetchProcesses().then((data) => {
+      setProcesses(data);
+      setIsLoading(false);
+    });
   }, []);
+
+  const handleProcessStatusChange = async (processId: string, status: { label: string; tone: StatusTone }) => {
+    const updated = await updateProcess(processId, { status });
+    if (updated) {
+      setProcesses((prev) => prev.map((p) => (p.id === processId ? updated : p)));
+      toast.success(`Status alterado para "${status.label}"`);
+    } else {
+      toast.error("Erro ao atualizar status do processo.");
+    }
+  };
 
   const filteredProcesses = processes.filter((p) => {
     const searchLower = search.toLowerCase();
@@ -142,9 +154,10 @@ function ProcessosPage() {
                             {process.area}
                           </TableCell>
                           <TableCell className="px-6 py-5">
-                            <StatusBadge
-                              tone={process.status.tone}
-                              label={process.status.label}
+                            <StatusSelector
+                              value={process.status}
+                              options={PROCESS_STATUS_OPTIONS}
+                              onChange={(status) => handleProcessStatusChange(process.id, status)}
                             />
                           </TableCell>
                           <TableCell className="px-6 py-5 text-sm whitespace-nowrap text-muted-foreground">

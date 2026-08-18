@@ -14,9 +14,11 @@ import LogoBranca from "@/assets/Jeniffer Lemes Advocacia.png";
 export const Route = createFileRoute("/login")({
   component: LoginPage,
   beforeLoad: () => {
-    const stored = localStorage.getItem("ordinus_auth");
-    if (stored) {
-      throw redirect({ to: "/" });
+    if (typeof window !== 'undefined') {
+      const token = localStorage.getItem("ordinus_access_token");
+      if (token) {
+        throw redirect({ to: "/" });
+      }
     }
   },
   head: () => ({
@@ -52,7 +54,8 @@ function LoginPage() {
 
     if (success) {
       toast.success("Login realizado com sucesso!");
-      navigate({ to: "/" });
+      // Use full page reload to ensure auth state is properly loaded
+      window.location.href = "/";
     } else {
       toast.error("Email ou senha invalidos.");
     }
@@ -186,6 +189,17 @@ function LoginPage() {
                 <p className="text-[10px] text-muted-foreground">Estagiario</p>
               </button>
             </div>
+          </div>
+
+          {/* Link para portal do cliente */}
+          <div className="mt-4 pt-4 border-t border-border">
+            <a
+              href="/portal/login"
+              className="flex items-center justify-center gap-2 w-full rounded-md border border-border px-3 py-2.5 text-sm text-muted-foreground transition-colors hover:bg-secondary/50 hover:text-foreground"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+              Acessar Portal do Cliente
+            </a>
           </div>
         </div>
       </div>

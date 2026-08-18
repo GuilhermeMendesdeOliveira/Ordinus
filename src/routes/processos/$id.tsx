@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowLeft, ShieldAlert } from "lucide-react";
 
@@ -7,7 +8,7 @@ import { Header } from "@/components/dashboard/Header";
 import { ProcessDetailsForm } from "@/components/dashboard/ProcessDetailsForm";
 import { useSidebar } from "@/lib/sidebar-context";
 import { cn } from "@/lib/utils";
-import { getStoredProcesses } from "@/lib/processes-store";
+import { fetchProcessById, type ProcessRow } from "@/lib/processes-store";
 
 export const Route = createFileRoute("/processos/$id")({
   component: ProcessDetailsPage,
@@ -25,8 +26,16 @@ export const Route = createFileRoute("/processos/$id")({
 function ProcessDetailsPage() {
   const { id } = Route.useParams();
   const { isCollapsed } = useSidebar();
-  const processes = getStoredProcesses();
-  const process = processes.find((p) => p.id === id);
+  const [process, setProcess] = useState<ProcessRow | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    setIsLoading(true);
+    fetchProcessById(id).then((data) => {
+      setProcess(data);
+      setIsLoading(false);
+    });
+  }, [id]);
 
   return (
     <div className="flex h-screen w-full bg-background overflow-hidden">

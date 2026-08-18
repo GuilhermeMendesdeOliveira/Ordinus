@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Save, Upload, Eye, Trash2, FileText, Image, RefreshCw, Search } from "lucide-react";
+import { Save, Upload, Eye, Trash2, FileText, Image, RefreshCw, Search, Plus } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -12,9 +12,11 @@ import { DocumentUploadDialog } from "./DocumentUploadDialog";
 import { DocumentViewerDialog } from "./DocumentViewerDialog";
 import { ProcessTimeline } from "./ProcessTimeline";
 import { DeadlineList } from "./DeadlineList";
+import { AddMovementDialog, type MovementFormData } from "./AddMovementDialog";
 import type { ProcessRow, ProcessDocument } from "@/lib/processes-store";
-import { setStoredProcesses, getStoredProcesses } from "@/lib/processes-store";
+import { updateProcess } from "@/lib/processes-store";
 import { consultarProcesso, type Movimentacao } from "@/lib/datajud-service";
+import { apiClient } from "@/lib/api-client";
 
 interface ProcessDetailsFormProps {
   process: ProcessRow;
@@ -75,6 +77,7 @@ export function ProcessDetailsForm({ process }: ProcessDetailsFormProps) {
   const [isSaving, setIsSaving] = useState(false);
   const [isUploadOpen, setIsUploadOpen] = useState(false);
   const [isViewerOpen, setIsViewerOpen] = useState(false);
+  const [isMovementOpen, setIsMovementOpen] = useState(false);
   const [selectedDocument, setSelectedDocument] = useState<ProcessDocument | null>(null);
 
   const fields = getFieldsForArea(process.area);
@@ -86,8 +89,23 @@ export function ProcessDetailsForm({ process }: ProcessDetailsFormProps) {
   const carregarMovimentacoes = async () => {
     setIsLoadingTimeline(true);
     try {
-      const data = await consultarProcesso(process.processNumber);
-      setMovimentacoes(data.movimentacoes);
+      // Load movements from backend first
+      const movementsResponse = await apiClient.get(`/processes/${process.id}/movements`);
+      if (movementsResponse.success && movementsResponse.data) {
+        const backendMovements = movementsResponse.data as any[];
+        const convertedMovements: Movimentacao[] = backendMovements.map((m: any) => ({
+          id: m.id,
+          data: new Date(m.date).toLocaleDateString('pt-BR') + ' ' + new Date(m.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
+          descricao: m.title + (m.description ? ` - ${m.description}` : ''),
+          orgao: m.source === 'datajud' ? 'DataJud' : 'Registro Manual',
+          tipo: m.source === 'datajud' ? 'movimentacao' : 'movimentacao',
+        }));
+        setMovimentacoes(convertedMovements);
+      } else {
+        // Fallback to simulated DataJud
+        const data = await consultarProcesso(process.processNumber);
+        setMovimentacoes(data.movimentacoes);
+      }
     } catch {
       toast.error("Erro ao consultar movimentacoes do processo.");
     } finally {
@@ -99,27 +117,21 @@ export function ProcessDetailsForm({ process }: ProcessDetailsFormProps) {
     setDetails((prev) => ({ ...prev, [key]: value }));
   };
 
-  const handleUploadDocument = (doc: ProcessDocument) => {
+  const handleUploadDocument = async (doc: ProcessDocument) => {
     const updatedDocs = [...documents, doc];
     setDocuments(updatedDocs);
-
-    const allProcesses = getStoredProcesses();
-    const updated = allProcesses.map((p) =>
-      p.id === process.id ? { ...p, documents: updatedDocs } : p
-    );
-    setStoredProcesses(updated);
+    await updateProcess(process.id, { documents: updatedDocs });
   };
 
-  const handleDeleteDocument = (docId: string) => {
+  const handleDeleteDocument = async (docId: string) => {
     const updatedDocs = documents.filter((d) => d.id !== docId);
     setDocuments(updatedDocs);
-
-    const allProcesses = getStoredProcesses();
-    const updated = allProcesses.map((p) =>
-      p.id === process.id ? { ...p, documents: updatedDocs } : p
-    );
-    setStoredProcesses(updated);
-    toast.success("Documento removido com sucesso.");
+    const result = await updateProcess(process.id, { documents: updatedDocs });
+    if (result) {
+      toast.success("Documento removido com sucesso.");
+    } else {
+      toast.error("Erro ao remover documento.");
+    }
   };
 
   const handleViewDocument = (doc: ProcessDocument) => {
@@ -127,17 +139,49 @@ export function ProcessDetailsForm({ process }: ProcessDetailsFormProps) {
     setIsViewerOpen(true);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     setIsSaving(true);
     try {
-      const allProcesses = getStoredProcesses();
-      const updated = allProcesses.map((p) =>
-        p.id === process.id ? { ...p, details, notes, documents } : p
-      );
-      setStoredProcesses(updated);
-      toast.success("Informacoes do processo salvas com sucesso!");
+      const result = await updateProcess(process.id, { details, notes, documents });
+      if (result) {
+        toast.success("Informacoes do processo salvas com sucesso!");
+      } else {
+        toast.error("Erro ao salvar informacoes do processo.");
+      }
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleAddMovement = async (data: MovementFormData) => {
+    try {
+      const response = await apiClient.post(`/processes/${process.id}/movements`, {
+        date: data.date,
+        title: data.title,
+        description: data.description || undefined,
+      });
+
+      if (response.success) {
+        // Reload movements from backend
+        const movementsResponse = await apiClient.get(`/processes/${process.id}/movements`);
+        if (movementsResponse.success && movementsResponse.data) {
+          // Convert backend movements to frontend format
+          const backendMovements = movementsResponse.data as any[];
+          const convertedMovements: Movimentacao[] = backendMovements.map((m: any) => ({
+            id: m.id,
+            data: new Date(m.date).toLocaleDateString('pt-BR') + ' ' + new Date(m.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
+            descricao: m.title + (m.description ? ` - ${m.description}` : ''),
+            orgao: m.source === 'datajud' ? 'DataJud' : 'Registro Manual',
+            tipo: m.source === 'datajud' ? 'movimentacao' : 'movimentacao',
+          }));
+          setMovimentacoes(convertedMovements);
+        }
+      } else {
+        throw new Error(response.error?.message || 'Erro ao adicionar movimentação');
+      }
+    } catch (error: any) {
+      console.error('Error adding movement:', error);
+      throw error;
     }
   };
 
@@ -289,23 +333,34 @@ export function ProcessDetailsForm({ process }: ProcessDetailsFormProps) {
           <h3 className="text-lg font-heading font-semibold text-foreground">
             Andamento do Processo
           </h3>
-          <Button
-            type="button"
-            variant="outline"
-            onClick={carregarMovimentacoes}
-            disabled={isLoadingTimeline}
-            className="cursor-pointer gap-2"
-          >
-            <RefreshCw className={`h-4 w-4 ${isLoadingTimeline ? "animate-spin" : ""}`} />
-            Atualizar
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setIsMovementOpen(true)}
+              className="cursor-pointer gap-2"
+            >
+              <Plus className="h-4 w-4" />
+              Nova Movimentação
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={carregarMovimentacoes}
+              disabled={isLoadingTimeline}
+              className="cursor-pointer gap-2"
+            >
+              <RefreshCw className={`h-4 w-4 ${isLoadingTimeline ? "animate-spin" : ""}`} />
+              DataJud
+            </Button>
+          </div>
         </div>
 
         <div className="rounded-md border border-border bg-secondary/20 p-4 mb-4">
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Search className="h-4 w-4" />
             <span>
-              Consultando movimentacoes via <span className="font-medium text-foreground">API DataJud</span> - CNJ
+              Movimentações do <span className="font-medium text-foreground">DataJud</span> e registros manuais
             </span>
           </div>
         </div>
@@ -336,6 +391,13 @@ export function ProcessDetailsForm({ process }: ProcessDetailsFormProps) {
         isOpen={isViewerOpen}
         onOpenChange={setIsViewerOpen}
         document={selectedDocument}
+      />
+
+      <AddMovementDialog
+        isOpen={isMovementOpen}
+        onOpenChange={setIsMovementOpen}
+        onAdd={handleAddMovement}
+        processNumber={process.processNumber}
       />
     </div>
   );

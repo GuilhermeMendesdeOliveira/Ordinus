@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 import {
   Briefcase,
   CalendarCheck,
@@ -20,10 +20,19 @@ import { ChartCard, type ChartPoint } from "@/components/dashboard/ChartCard";
 import { ActivityCard, type Activity } from "@/components/dashboard/ActivityCard";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { useSidebar } from "@/lib/sidebar-context";
-import { getStoredClients } from "@/lib/clients-store";
+import { fetchClients } from "@/lib/clients-store";
 
 export const Route = createFileRoute("/")({
   component: DashboardPage,
+  beforeLoad: () => {
+    // Redirect to login if not authenticated
+    if (typeof window !== 'undefined') {
+      const token = localStorage.getItem("ordinus_access_token");
+      if (!token) {
+        throw redirect({ to: "/login" });
+      }
+    }
+  },
   head: () => ({
     meta: [
       { title: "Painel de Controle | Jeniffer Lemes Advocacia" },
@@ -130,9 +139,10 @@ function DashboardPage() {
   const { isCollapsed } = useSidebar();
 
   useEffect(() => {
-    setClients(getStoredClients());
-    const timer = setTimeout(() => setIsLoading(false), 700);
-    return () => clearTimeout(timer);
+    fetchClients().then((data) => {
+      setClients(data);
+      setIsLoading(false);
+    });
   }, []);
 
   const dynamicMetrics: Metric[] = [

@@ -16,37 +16,50 @@ import {
   Building,
 } from "lucide-react";
 import type { ClientRow } from "./DashboardTable";
-import { StatusBadge } from "@/components/system/StatusBadge";
+import { StatusSelector, CLIENT_STATUS_OPTIONS } from "@/components/system/StatusSelector";
+import type { StatusTone } from "@/components/system/StatusBadge";
 
 interface ViewClientDialogProps {
   client: ClientRow | null;
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
+  onStatusChange?: (clientId: string, status: { label: string; tone: StatusTone }) => void;
 }
 
 export function ViewClientDialog({
   client,
   isOpen,
   onOpenChange,
+  onStatusChange,
 }: ViewClientDialogProps) {
   if (!client) return null;
 
+  const handleStatusChange = (status: { label: string; tone: StatusTone }) => {
+    if (onStatusChange) {
+      onStatusChange(client.id, status);
+    }
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[550px] border-border bg-card">
+      <DialogContent className="sm:max-w-[550px] max-h-[90vh] overflow-hidden border-border bg-card">
         <DialogHeader className="border-b border-border pb-4">
           <div className="flex items-center justify-between gap-4">
             <DialogTitle className="font-heading text-2xl text-foreground flex items-center gap-2">
               <User className="h-6 w-6 text-gold" />
               Detalhes do Cliente
             </DialogTitle>
-            <div className="mr-6">
-              <StatusBadge tone={client.status.tone} label={client.status.label} />
+            <div>
+              <StatusSelector
+                value={client.status}
+                options={CLIENT_STATUS_OPTIONS}
+                onChange={handleStatusChange}
+              />
             </div>
           </div>
         </DialogHeader>
 
-        <div className="space-y-6 py-4">
+        <div className="space-y-6 py-4 overflow-y-auto max-h-[calc(90vh-180px)]">
           {/* Seção 1: Dados Pessoais */}
           <div>
             <h3 className="text-sm font-semibold text-gold uppercase tracking-wider mb-3 flex items-center gap-2">

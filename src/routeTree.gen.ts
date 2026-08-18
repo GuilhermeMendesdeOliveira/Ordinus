@@ -11,7 +11,17 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as PortalRouteImport } from './routes/portal'
 import { Route as ClientesIndexRouteImport } from './routes/clientes/index'
+import { Route as ConfiguracoesIndexRouteImport } from './routes/configuracoes/index'
+import { Route as ContratosIndexRouteImport } from './routes/contratos/index'
+import { Route as ContratosIdRouteImport } from './routes/contratos/$id'
+import { Route as ContratosNovoRouteImport } from './routes/contratos/novo'
+import { Route as PortalIndexRouteImport } from './routes/portal/index'
+import { Route as PortalContratosRouteImport } from './routes/portal/contratos'
+import { Route as PortalLoginRouteImport } from './routes/portal/login'
+import { Route as PortalNotificacoesRouteImport } from './routes/portal/notificacoes'
+import { Route as PortalProcessosRouteImport } from './routes/portal/processos'
 import { Route as ProcessosIndexRouteImport } from './routes/processos/index'
 import { Route as ProcessosIdRouteImport } from './routes/processos/$id'
 
@@ -25,10 +35,60 @@ const LoginRoute = LoginRouteImport.update({
   path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PortalRoute = PortalRouteImport.update({
+  id: '/portal',
+  path: '/portal',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ClientesIndexRoute = ClientesIndexRouteImport.update({
   id: '/clientes/',
   path: '/clientes/',
   getParentRoute: () => rootRouteImport,
+} as any)
+const ConfiguracoesIndexRoute = ConfiguracoesIndexRouteImport.update({
+  id: '/configuracoes/',
+  path: '/configuracoes/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ContratosIndexRoute = ContratosIndexRouteImport.update({
+  id: '/contratos/',
+  path: '/contratos/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ContratosIdRoute = ContratosIdRouteImport.update({
+  id: '/contratos/$id',
+  path: '/contratos/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ContratosNovoRoute = ContratosNovoRouteImport.update({
+  id: '/contratos/novo',
+  path: '/contratos/novo',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PortalIndexRoute = PortalIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => PortalRoute,
+} as any)
+const PortalContratosRoute = PortalContratosRouteImport.update({
+  id: '/contratos',
+  path: '/contratos',
+  getParentRoute: () => PortalRoute,
+} as any)
+const PortalLoginRoute = PortalLoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => PortalRoute,
+} as any)
+const PortalNotificacoesRoute = PortalNotificacoesRouteImport.update({
+  id: '/notificacoes',
+  path: '/notificacoes',
+  getParentRoute: () => PortalRoute,
+} as any)
+const PortalProcessosRoute = PortalProcessosRouteImport.update({
+  id: '/processos',
+  path: '/processos',
+  getParentRoute: () => PortalRoute,
 } as any)
 const ProcessosIndexRoute = ProcessosIndexRouteImport.update({
   id: '/processos/',
@@ -44,44 +104,117 @@ const ProcessosIdRoute = ProcessosIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
+  '/portal': typeof PortalRouteWithChildren
+  '/contratos/$id': typeof ContratosIdRoute
+  '/contratos/novo': typeof ContratosNovoRoute
+  '/portal/contratos': typeof PortalContratosRoute
+  '/portal/login': typeof PortalLoginRoute
+  '/portal/notificacoes': typeof PortalNotificacoesRoute
+  '/portal/processos': typeof PortalProcessosRoute
   '/processos/$id': typeof ProcessosIdRoute
   '/clientes/': typeof ClientesIndexRoute
+  '/configuracoes/': typeof ConfiguracoesIndexRoute
+  '/contratos/': typeof ContratosIndexRoute
+  '/portal/': typeof PortalIndexRoute
   '/processos/': typeof ProcessosIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
+  '/contratos/$id': typeof ContratosIdRoute
+  '/contratos/novo': typeof ContratosNovoRoute
+  '/portal/contratos': typeof PortalContratosRoute
+  '/portal/login': typeof PortalLoginRoute
+  '/portal/notificacoes': typeof PortalNotificacoesRoute
+  '/portal/processos': typeof PortalProcessosRoute
   '/processos/$id': typeof ProcessosIdRoute
   '/clientes': typeof ClientesIndexRoute
+  '/configuracoes': typeof ConfiguracoesIndexRoute
+  '/contratos': typeof ContratosIndexRoute
+  '/portal': typeof PortalIndexRoute
   '/processos': typeof ProcessosIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
+  '/portal': typeof PortalRouteWithChildren
+  '/contratos/$id': typeof ContratosIdRoute
+  '/contratos/novo': typeof ContratosNovoRoute
+  '/portal/contratos': typeof PortalContratosRoute
+  '/portal/login': typeof PortalLoginRoute
+  '/portal/notificacoes': typeof PortalNotificacoesRoute
+  '/portal/processos': typeof PortalProcessosRoute
   '/processos/$id': typeof ProcessosIdRoute
   '/clientes/': typeof ClientesIndexRoute
+  '/configuracoes/': typeof ConfiguracoesIndexRoute
+  '/contratos/': typeof ContratosIndexRoute
+  '/portal/': typeof PortalIndexRoute
   '/processos/': typeof ProcessosIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/login' | '/processos/$id' | '/clientes/' | '/processos/'
+  fullPaths:
+    | '/'
+    | '/login'
+    | '/portal'
+    | '/contratos/$id'
+    | '/contratos/novo'
+    | '/portal/contratos'
+    | '/portal/login'
+    | '/portal/notificacoes'
+    | '/portal/processos'
+    | '/processos/$id'
+    | '/clientes/'
+    | '/configuracoes/'
+    | '/contratos/'
+    | '/portal/'
+    | '/processos/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/login' | '/processos/$id' | '/clientes' | '/processos'
+  to:
+    | '/'
+    | '/login'
+    | '/contratos/$id'
+    | '/contratos/novo'
+    | '/portal/contratos'
+    | '/portal/login'
+    | '/portal/notificacoes'
+    | '/portal/processos'
+    | '/processos/$id'
+    | '/clientes'
+    | '/configuracoes'
+    | '/contratos'
+    | '/portal'
+    | '/processos'
   id:
     | '__root__'
     | '/'
     | '/login'
+    | '/portal'
+    | '/contratos/$id'
+    | '/contratos/novo'
+    | '/portal/contratos'
+    | '/portal/login'
+    | '/portal/notificacoes'
+    | '/portal/processos'
     | '/processos/$id'
     | '/clientes/'
+    | '/configuracoes/'
+    | '/contratos/'
+    | '/portal/'
     | '/processos/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   LoginRoute: typeof LoginRoute
+  PortalRoute: typeof PortalRouteWithChildren
+  ContratosIdRoute: typeof ContratosIdRoute
+  ContratosNovoRoute: typeof ContratosNovoRoute
   ProcessosIdRoute: typeof ProcessosIdRoute
   ClientesIndexRoute: typeof ClientesIndexRoute
+  ConfiguracoesIndexRoute: typeof ConfiguracoesIndexRoute
+  ContratosIndexRoute: typeof ContratosIndexRoute
   ProcessosIndexRoute: typeof ProcessosIndexRoute
 }
 
@@ -101,12 +234,82 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/portal': {
+      id: '/portal'
+      path: '/portal'
+      fullPath: '/portal'
+      preLoaderRoute: typeof PortalRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/clientes/': {
       id: '/clientes/'
       path: '/clientes'
       fullPath: '/clientes/'
       preLoaderRoute: typeof ClientesIndexRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/configuracoes/': {
+      id: '/configuracoes/'
+      path: '/configuracoes'
+      fullPath: '/configuracoes/'
+      preLoaderRoute: typeof ConfiguracoesIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/contratos/': {
+      id: '/contratos/'
+      path: '/contratos'
+      fullPath: '/contratos/'
+      preLoaderRoute: typeof ContratosIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/contratos/$id': {
+      id: '/contratos/$id'
+      path: '/contratos/$id'
+      fullPath: '/contratos/$id'
+      preLoaderRoute: typeof ContratosIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/contratos/novo': {
+      id: '/contratos/novo'
+      path: '/contratos/novo'
+      fullPath: '/contratos/novo'
+      preLoaderRoute: typeof ContratosNovoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/portal/': {
+      id: '/portal/'
+      path: '/'
+      fullPath: '/portal/'
+      preLoaderRoute: typeof PortalIndexRouteImport
+      parentRoute: typeof PortalRoute
+    }
+    '/portal/contratos': {
+      id: '/portal/contratos'
+      path: '/contratos'
+      fullPath: '/portal/contratos'
+      preLoaderRoute: typeof PortalContratosRouteImport
+      parentRoute: typeof PortalRoute
+    }
+    '/portal/login': {
+      id: '/portal/login'
+      path: '/login'
+      fullPath: '/portal/login'
+      preLoaderRoute: typeof PortalLoginRouteImport
+      parentRoute: typeof PortalRoute
+    }
+    '/portal/notificacoes': {
+      id: '/portal/notificacoes'
+      path: '/notificacoes'
+      fullPath: '/portal/notificacoes'
+      preLoaderRoute: typeof PortalNotificacoesRouteImport
+      parentRoute: typeof PortalRoute
+    }
+    '/portal/processos': {
+      id: '/portal/processos'
+      path: '/processos'
+      fullPath: '/portal/processos'
+      preLoaderRoute: typeof PortalProcessosRouteImport
+      parentRoute: typeof PortalRoute
     }
     '/processos/': {
       id: '/processos/'
@@ -125,11 +328,35 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface PortalRouteChildren {
+  PortalContratosRoute: typeof PortalContratosRoute
+  PortalLoginRoute: typeof PortalLoginRoute
+  PortalNotificacoesRoute: typeof PortalNotificacoesRoute
+  PortalProcessosRoute: typeof PortalProcessosRoute
+  PortalIndexRoute: typeof PortalIndexRoute
+}
+
+const PortalRouteChildren: PortalRouteChildren = {
+  PortalContratosRoute: PortalContratosRoute,
+  PortalLoginRoute: PortalLoginRoute,
+  PortalNotificacoesRoute: PortalNotificacoesRoute,
+  PortalProcessosRoute: PortalProcessosRoute,
+  PortalIndexRoute: PortalIndexRoute,
+}
+
+const PortalRouteWithChildren =
+  PortalRoute._addFileChildren(PortalRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   LoginRoute: LoginRoute,
+  PortalRoute: PortalRouteWithChildren,
+  ContratosIdRoute: ContratosIdRoute,
+  ContratosNovoRoute: ContratosNovoRoute,
   ProcessosIdRoute: ProcessosIdRoute,
   ClientesIndexRoute: ClientesIndexRoute,
+  ConfiguracoesIndexRoute: ConfiguracoesIndexRoute,
+  ContratosIndexRoute: ContratosIndexRoute,
   ProcessosIndexRoute: ProcessosIndexRoute,
 }
 export const routeTree = rootRouteImport

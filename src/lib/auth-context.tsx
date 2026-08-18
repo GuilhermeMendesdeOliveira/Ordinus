@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect, type ReactNode } from "react";
+import { apiClient } from "./api-client";
 
 export interface User {
   id: string;
@@ -13,82 +14,78 @@ interface AuthContextType {
   isAuthenticated: boolean;
   login: (email: string, password: string) => Promise<boolean>;
   logout: () => void;
+  updateUser: (data: Partial<Pick<User, 'name' | 'email'>>) => void;
   isLoading: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
-
-const MOCK_USERS: Array<User & { password: string }> = [
-  {
-    id: "1",
-    name: "Jeniffer Lemes",
-    email: "jeniffer@advocacia.com",
-    password: "123456",
-    role: "admin",
-  },
-  {
-    id: "2",
-    name: "Rafael Mendes",
-    email: "rafael@advocacia.com",
-    password: "123456",
-    role: "advogado",
-  },
-  {
-    id: "3",
-    name: "Helena Aragao",
-    email: "helena@advocacia.com",
-    password: "123456",
-    role: "advogado",
-  },
-  {
-    id: "4",
-    name: "Vitor Salles",
-    email: "vitor@advocacia.com",
-    password: "123456",
-    role: "estagiario",
-  },
-];
-
-const AUTH_STORAGE_KEY = "ordinus_auth";
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const stored = localStorage.getItem(AUTH_STORAGE_KEY);
-    if (stored) {
-      try {
-        setUser(JSON.parse(stored));
-      } catch {
-        localStorage.removeItem(AUTH_STORAGE_KEY);
+    const initAuth = async () => {
+      // Skip staff auth check on portal pages
+      if (typeof window !== 'undefined' && window.location.pathname.startsWith('/portal')) {
+        setIsLoading(false);
+        return;
       }
-    }
-    setIsLoading(false);
+
+      if (apiClient.isAuthenticated()) {
+        try {
+          const result = await apiClient.getMe();
+          if (result.success && result.data) {
+            setUser(result.data.user ?? result.data);
+          } else {
+            apiClient.clearTokens();
+          }
+        } catch {
+          apiClient.clearTokens();
+        }
+      }
+      setIsLoading(false);
+    };
+    initAuth();
   }, []);
 
   const login = async (email: string, password: string): Promise<boolean> => {
-    const foundUser = MOCK_USERS.find(
-      (u) => u.email === email && u.password === password
-    );
+    const result = await apiClient.login(email, password);
 
-    if (foundUser) {
-      const { password: _, ...userWithoutPassword } = foundUser;
-      setUser(userWithoutPassword);
-      localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(userWithoutPassword));
+    if (result.success && result.data) {
+      const raw = result.data.user ?? result.data;
+      const loggedInUser: User = {
+        id: raw.id,
+        name: raw.name,
+        email: raw.email,
+        role: raw.role,
+        avatar: raw.avatar,
+      };
+      setUser(loggedInUser);
       return true;
     }
 
     return false;
   };
 
-  const logout = () => {
+  const logout = async () => {
     setUser(null);
-    localStorage.removeItem(AUTH_STORAGE_KEY);
+    await apiClient.logout();
+    // Redirect to login page
+    if (typeof window !== 'undefined') {
+      window.location.href = '/login';
+    }
+  };
+
+  const updateUser = (data: Partial<Pick<User, 'name' | 'email'>>) => {
+    setUser((prev) => {
+      if (!prev) return prev;
+      return { ...prev, ...data };
+    });
   };
 
   return (
-    <AuthContext.Provider value={{ user, isAuthenticated: !!user, login, logout, isLoading }}>
+    <AuthContext.Provider value={{ user, isAuthenticated: !!user, login, logout, updateUser, isLoading }}>
       {children}
     </AuthContext.Provider>
   );
@@ -100,8 +97,4 @@ export function useAuth() {
     throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;
-}
-
-export function getMockUsers() {
-  return MOCK_USERS.map(({ password, ...user }) => user);
 }

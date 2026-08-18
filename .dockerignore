@@ -1,0 +1,10 @@
+node_modules
+.output
+.git
+*.md
+.lovable
+.continue
+.opencode
+.tanstack
+.wrangler
+.agent
