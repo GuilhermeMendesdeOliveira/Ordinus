@@ -15,8 +15,20 @@
 </p>
 
 <p align="center">
-  Interface web moderna e responsiva para gerenciamento completo de processos jurídicos, clientes, contratos e prazos advocatícios.
+  Ordinus é uma aplicação web full-stack desenvolvida para modernizar a gestão de escritórios de advocacia. O frontend oferece uma interface intuitiva e responsiva para acompanhamento completo de processos jurídicos, contratos, clientes e prazos.
+O que o sistema faz:
 </p>
+
+<div align="start">
+  
+- **Dashboard Inteligente** — Métricas em tempo real, gráficos de performance e indicadores-chave do escritório
+- **Gestão de Processos** — Acompanhamento completo com timeline de movimentações, upload de documentos e integração com DataJud
+- **Editor de Contratos** — Sistema visual com blocos drag-and-drop, cláusulas customizáveis e geração de PDF profissional
+- **Portal do Cliente** — Área exclusiva onde clientes acompanham seus processos e contratos
+- **Controle de Prazos** — Alertas automáticos e notificações em tempo real via WebSocket
+- **Autenticação Segura** — Login com JWT, rotas protegidas e controle de acesso por perfil
+  
+</div>
 
 <br/>
 
