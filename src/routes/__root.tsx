@@ -10,7 +10,6 @@ import {
 import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
-import { reportLovableError } from "../lib/lovable-error-reporting";
 import { Toaster } from "@/components/ui/sonner";
 import { AuthProvider } from "@/lib/auth-context";
 import { SidebarProvider } from "@/lib/sidebar-context";
@@ -40,9 +39,6 @@ function NotFoundComponent() {
 function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   console.error(error);
   const router = useRouter();
-  useEffect(() => {
-    reportLovableError(error, { boundary: "tanstack_root_error_component" });
-  }, [error]);
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
@@ -80,15 +76,15 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Mendes & Aragão — Advocacia Empresarial" },
+      { title: "Jeniffer Lemes Advocacia — Gestão Jurídica" },
       {
         name: "description",
-        content: "Sistema de gestão jurídica do escritório Mendes & Aragão Advocacia.",
+        content: "Aplicação web para gerenciamento de processos jurídicos do escritório Jeniffer Lemes Advocacia.",
       },
-      { property: "og:title", content: "Mendes & Aragão — Advocacia Empresarial" },
+      { property: "og:title", content: "Jeniffer Lemes Advocacia — Gestão Jurídica" },
       {
         property: "og:description",
-        content: "Sistema de gestão jurídica do escritório Mendes & Aragão Advocacia.",
+        content: "Aplicação web para gerenciamento de processos jurídicos do escritório Jeniffer Lemes Advocacia.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -104,7 +100,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         rel: "stylesheet",
         href: "https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap",
       },
-      { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
+      { rel: "icon", href: "/favicon.svg", type: "image/svg+xml" },
     ],
   }),
 
@@ -116,7 +112,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 
 function RootShell({ children }: { children: ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="pt-BR">
       <head>
         <HeadContent />
       </head>
